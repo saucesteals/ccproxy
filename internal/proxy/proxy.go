@@ -120,7 +120,10 @@ func (h *Handler) serveAuth(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 
 	case http.MethodDelete:
-		h.auth.Logout()
+		if err := h.auth.Logout(); err != nil {
+			writeError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
 		writeJSON(w, http.StatusOK, map[string]string{"status": "logged_out"})
 
 	default:

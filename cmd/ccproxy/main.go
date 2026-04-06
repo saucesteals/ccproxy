@@ -24,7 +24,11 @@ func main() {
 		slog.Warn("auth not loaded (run auth first)", "error", err)
 	} else {
 		id := authStore.Identity()
-		slog.Info("auth loaded", "uuid", id.AccountUUID[:min(8, len(id.AccountUUID))]+"...", "email", id.Email)
+		slog.Info("auth loaded",
+			"uuid", id.AccountUUID[:min(8, len(id.AccountUUID))]+"...",
+			"email", id.Email,
+			"expires", authStore.Expiry().Format(time.RFC3339),
+		)
 		authStore.StartRefreshLoop()
 	}
 

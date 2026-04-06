@@ -93,7 +93,7 @@ func (s *Store) CompleteAuth(code, authState string) error {
 	s.mu.Unlock()
 
 	if err := s.save(); err != nil {
-		slog.Warn("failed to persist state after auth", "error", err)
+		return fmt.Errorf("persist state after auth: %w", err)
 	}
 
 	s.StartRefreshLoop()

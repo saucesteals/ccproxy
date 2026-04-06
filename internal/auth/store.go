@@ -4,7 +4,6 @@ package auth
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -87,12 +86,15 @@ func (s *Store) Load() error {
 	s.state = st
 	s.mu.Unlock()
 
-	slog.Info("auth loaded",
-		"email", st.Identity.Email,
-		"expires", time.UnixMilli(st.Tokens.ExpiresAt).Format(time.RFC3339),
-	)
-
 	return nil
+}
+
+// Expiry returns the current access token expiry time.
+func (s *Store) Expiry() time.Time {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	return time.UnixMilli(s.state.Tokens.ExpiresAt)
 }
 
 // save persists current tokens and identity to disk.
@@ -134,18 +136,20 @@ func (s *Store) AccessToken() string {
 }
 
 // Logout clears all tokens and identity, persists the empty state.
-func (s *Store) Logout() {
-	if s.cancelRefresh != nil {
-		s.cancelRefresh()
-	}
-
+func (s *Store) Logout() error {
 	s.mu.Lock()
+	cancel := s.cancelRefresh
+	s.cancelRefresh = nil
 	s.state = state{}
 	s.mu.Unlock()
 
-	if err := s.save(); err != nil {
-		slog.Warn("failed to persist logout", "error", err)
+	if cancel != nil {
+		cancel()
 	}
 
-	slog.Info("logged out")
+	if err := s.save(); err != nil {
+		return fmt.Errorf("persist logout: %w", err)
+	}
+
+	return nil
 }
