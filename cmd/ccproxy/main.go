@@ -56,6 +56,9 @@ func main() {
 	}()
 
 	slog.Info("ccproxy listening", "addr", listenAddr, "upstream", upstream, "version", ccVersion)
+	if authToken == "" {
+		slog.Warn("AUTH_TOKEN unset — accepting any x-api-key")
+	}
 	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
 		slog.Error("server error", "error", err)
 		os.Exit(1)

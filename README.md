@@ -15,7 +15,10 @@ services:
     volumes:
       - ./profiles/default:/data
     environment:
-      - AUTH_TOKEN=my-secret-token
+      # AUTH_TOKEN gates access to ccproxy itself (sent as `x-api-key`).
+      # It is NOT your upstream subscription token — ccproxy handles that
+      # internally via OAuth. Leave unset to accept any key.
+      # - AUTH_TOKEN=my-secret-token
       - CONFIG_DIR=/data
     restart: unless-stopped
 ```
@@ -28,16 +31,16 @@ docker compose up -d
 
 ### 3. Authenticate
 
-Check auth status:
+Check auth status (any `x-api-key` works when `AUTH_TOKEN` is unset):
 
 ```bash
-curl -s -H 'x-api-key: my-secret-token' http://localhost:9191/_auth
+curl -s -H 'x-api-key: anything' http://localhost:9191/_auth
 ```
 
 If not authenticated, you'll get an OAuth URL. Open it, log in, and you'll receive a `code#state` value. POST it back:
 
 ```bash
-curl -s -X POST -H 'x-api-key: my-secret-token' http://localhost:9191/_auth -d 'CODE#STATE'
+curl -s -X POST -H 'x-api-key: anything' http://localhost:9191/_auth -d 'CODE#STATE'
 ```
 
 Tokens auto-refresh from here.
@@ -56,7 +59,7 @@ curl -s http://localhost:9191/_health
 - `DELETE /_auth` — logout
 - `* /*` — proxied upstream
 
-All endpoints except `/_health` require `x-api-key` header matching your `AUTH_TOKEN`.
+All endpoints except `/_health` require an `x-api-key` header. When `AUTH_TOKEN` is set, the header value must match it; when unset, any value (including empty) is accepted.
 
 ## Multiple Profiles
 
@@ -89,7 +92,7 @@ Authenticate each profile separately via its port.
 
 ## Environment Variables
 
-- **`AUTH_TOKEN`** — shared secret for client auth (`x-api-key` header)
+- **`AUTH_TOKEN`** — shared secret for client auth (`x-api-key` header). Gates access to ccproxy itself, **not** your upstream subscription. Leave unset to accept any key.
 - **`CONFIG_DIR`** — data directory (default: `~/.ccproxy`)
 - **`CC_VERSION`** — client version string (default: `2.1.92`)
 - **`UPSTREAM`** — upstream API endpoint

@@ -78,6 +78,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) authenticate(r *http.Request) bool {
+	if h.token == "" {
+		return true
+	}
 	return subtle.ConstantTimeCompare(
 		[]byte(r.Header.Get("x-api-key")),
 		[]byte(h.token),
