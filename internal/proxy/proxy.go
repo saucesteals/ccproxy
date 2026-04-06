@@ -241,7 +241,7 @@ func (h *Handler) streamResponse(w http.ResponseWriter, resp *http.Response) {
 	f, canFlush := w.(http.Flusher)
 	if !canFlush {
 		body, _ := io.ReadAll(resp.Body)
-		_, _ = w.Write(unprefixTools(body))
+		_, _ = w.Write(unprefixResponse(body, resp.Header.Get("Content-Type")))
 		return
 	}
 
